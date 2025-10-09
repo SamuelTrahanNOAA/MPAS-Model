@@ -220,7 +220,10 @@
           ! These flags are associated with appropriate packages in mpas_atmphys_packages.F
           if (config_tempo_hailaware) then
              if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
-             if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
+             if(.not.allocated(volg_p)) then
+                allocate(volg_p(ims:ime,kms:kme,jms:jme))
+                volg_p = 0
+             endif
           endif
 
           if (config_tempo_ml_nc_pbl) then
@@ -245,7 +248,10 @@
           if(.not.allocated(ng_p) ) allocate(ng_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nh_p) ) allocate(nh_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(nccn_p) ) allocate(nccn_p(ims:ime,kms:kme,jms:jme))
-          if(.not.allocated(volg_p)) allocate(volg_p(ims:ime,kms:kme,jms:jme))
+          if(.not.allocated(volg_p)) then
+             allocate(volg_p(ims:ime,kms:kme,jms:jme))
+             volg_p = 0
+          endif
           if(.not.allocated(volh_p)) allocate(volh_p(ims:ime,kms:kme,jms:jme))
           if(.not.allocated(refl10cm_1km_p)  ) allocate(refl10cm_1km_p(ims:ime,jms:jme) )
           
