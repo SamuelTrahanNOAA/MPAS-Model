@@ -1242,6 +1242,10 @@
                         <var name="nwfa" array_group="number" units="nb kg^{-1}"
                              description="Gocart water-friendly aerosol number concentration"
                              packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
+
+                        <var name="volg" array_group="volume" units="m^{3} kg^{-1}"
+                             description="Graupel particle volume"
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
                 </var_array>
 
                 <!-- Climatology for ocean mixed-layer depth -->
