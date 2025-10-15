@@ -8323,6 +8323,9 @@ call mpas_log_write('Done with soil consistency check')
 
       end do
 
+      call mpas_log_write('Fill scalars(index_volg,:,:) with 0; index_volg=$i', intargs=(/ index_volg /))
+      scalars(index_volg,:,:) = 0._RKIND
+
 
       !
       ! Reference state based on a dry isothermal atmosphere
