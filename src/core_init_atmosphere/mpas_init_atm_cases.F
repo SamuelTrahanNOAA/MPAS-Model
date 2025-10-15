@@ -4107,7 +4107,7 @@ module init_atm_cases
 
       integer :: nfglevels_actual
       integer, pointer :: index_qv, index_qc, index_qr, index_qi, index_qs, index_qg, index_ni, index_nc, index_nr, index_ns, index_ng
-      integer, pointer :: index_nwfa, index_nifa
+      integer, pointer :: index_nwfa, index_nifa, index_volg
 
       integer, dimension(5) :: interp_list
       real (kind=RKIND) :: maskval
@@ -4122,7 +4122,7 @@ module init_atm_cases
       real (kind=RKIND), dimension(:), pointer :: dvEdge, dcEdge, areaCell 
       real (kind=RKIND), dimension(:,:), pointer :: sorted_arr
       real (kind=RKIND), dimension(:,:), pointer :: sorted_arrQ1,sorted_arrQ2,sorted_arrQ3,sorted_arrQ4,sorted_arrQ5,sorted_arrQ6,sorted_arrQ7,sorted_arrQ8
-      real (kind=RKIND), dimension(:,:), pointer :: sorted_arrQ9,sorted_arrQ10
+      real (kind=RKIND), dimension(:,:), pointer :: sorted_arrQ9,sorted_arrQ10, sorted_arrQ11
 
       integer, dimension(:), pointer :: bdyMaskCell
 
@@ -4237,6 +4237,7 @@ module init_atm_cases
       real (kind=RKIND), dimension(:,:), pointer :: rh_fg
       real (kind=RKIND), dimension(:,:), pointer :: sh_fg
       real (kind=RKIND), dimension(:,:), pointer :: qnwfa_fg
+      real (kind=RKIND), dimension(:,:), pointer :: volg_fg
       real (kind=RKIND), dimension(:,:), pointer :: qnifa_fg
       real (kind=RKIND), dimension(:,:), pointer :: qc_fg
       real (kind=RKIND), dimension(:,:), pointer :: qr_fg
@@ -4395,6 +4396,13 @@ module init_atm_cases
       call mpas_pool_get_array(fg, 'rh', rh_fg)
       call mpas_pool_get_array(fg, 'sh', sh_fg)
       call mpas_pool_get_array(fg, 'qnwfa', qnwfa_fg)
+      nullify(volg_fg)
+      call mpas_pool_get_array(fg, 'volg', volg_fg)
+      if(associated(volg_fg)) then
+         call mpas_log_write('volg_fg is associated')
+      else
+         call mpas_log_write('volg_fg not associated')
+      endif
       call mpas_pool_get_array(fg, 'qnifa', qnifa_fg)
       call mpas_pool_get_array(fg, 'qc', qc_fg)
       call mpas_pool_get_array(fg, 'qr', qr_fg)
@@ -4414,6 +4422,8 @@ module init_atm_cases
       call mpas_pool_get_dimension(state, 'index_qv', index_qv)
 
       call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
+      call mpas_pool_get_dimension(state, 'index_volg', index_volg)
+      call mpas_log_write('index_volg = $i', intargs=(/ index_volg /))
       call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
       call mpas_pool_get_dimension(state, 'index_qc', index_qc)
       call mpas_pool_get_dimension(state, 'index_qi', index_qi)
@@ -4973,6 +4983,7 @@ module init_atm_cases
              trim(field % field) == 'RH' .or. &
              trim(field % field) == 'SPECHUMD' .or. &
              trim(field % field) == 'QNWFA' .or. &
+             trim(field % field) == 'VOLG' .or. &
              trim(field % field) == 'QNIFA' .or. &
              trim(field % field) == 'QC' .or. &
              trim(field % field) == 'QR' .or. &
@@ -5242,6 +5253,13 @@ module init_atm_cases
                latPoints => latCell
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'qnwfa', destField2d)
+               ndims = 2
+            else if (trim(field % field) == 'VOLG' ) then
+               call mpas_log_write('Interpolating VOLG at $i $r', intArgs=(/k/), realArgs=(/vert_level(k)/))
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'volg', destField2d)
                ndims = 2
             else if (trim(field % field) == 'QNIFA' ) then
                call mpas_log_write('Interpolating QNIFA at $i $r', intArgs=(/k/), realArgs=(/vert_level(k)/))
@@ -6751,6 +6769,9 @@ call mpas_log_write('Done with soil consistency check')
       allocate(sorted_arrQ8(2,nfglevels_actual))
       allocate(sorted_arrQ9(2,nfglevels_actual))
       allocate(sorted_arrQ10(2,nfglevels_actual))
+      allocate(sorted_arrQ11(2,nfglevels_actual))
+
+      call mpas_log_write('Vertical interpolation of hydrometeors index_volg=$i nCells=$i', intargs=(/ index_volg, nCells /))
 
       call mpas_log_write('min lon $r max lon $r min lat $r max lat $r',realArgs=(/minval(lonPoints),maxval(lonPoints),minval(latPoints),maxval(latPoints)/))
       do iCell=1,nCells
@@ -6827,6 +6848,7 @@ call mpas_log_write('Done with soil consistency check')
          sorted_arrQ8(:,:) = -999.0
          sorted_arrQ9(:,:) = -999.0
          sorted_arrQ10(:,:) = -999.0
+         sorted_arrQ11(:,:) = -999.0
          scalars(index_nwfa,:,iCell) = 0._RKIND
          scalars(index_nifa,:,iCell) = 0._RKIND
          scalars(index_qc,:,iCell) = 0._RKIND
@@ -6839,6 +6861,7 @@ call mpas_log_write('Done with soil consistency check')
          scalars(index_nr,:,iCell) = 0._RKIND
          scalars(index_ns,:,iCell) = 0._RKIND
          scalars(index_ng,:,iCell) = 0._RKIND
+         scalars(index_volg,:,iCell) = 0._RKIND
          do k = 1, nfglevels_actual
             sorted_arrQ1(1,k) = z_fg(k,iCell)
             sorted_arrQ2(1,k) = z_fg(k,iCell)
@@ -6850,6 +6873,7 @@ call mpas_log_write('Done with soil consistency check')
             sorted_arrQ8(1,k) = z_fg(k,iCell)
             sorted_arrQ9(1,k) = z_fg(k,iCell)
             sorted_arrQ10(1,k) = z_fg(k,iCell)
+            sorted_arrQ11(1,k) = z_fg(k,iCell)
             if (vert_level(k) == 200100.0) then
                 sorted_arrQ1(1,k) = 99999.0
                 sorted_arrQ2(1,k) = 99999.0
@@ -6861,6 +6885,7 @@ call mpas_log_write('Done with soil consistency check')
                 sorted_arrQ8(1,k) = 99999.0
                 sorted_arrQ9(1,k) = 99999.0
                 sorted_arrQ10(1,k) = 99999.0
+                sorted_arrQ11(1,k) = 99999.0
             endif
             sorted_arrQ1(2,k) = max(0._RKIND,qc_fg(k,iCell))
             sorted_arrQ2(2,k) = max(0._RKIND,qr_fg(k,iCell))
@@ -6872,6 +6897,7 @@ call mpas_log_write('Done with soil consistency check')
             sorted_arrQ8(2,k) = max(0._RKIND,qnr_fg(k,iCell))
             sorted_arrQ9(2,k) = max(0._RKIND,qnwfa_fg(k,iCell))
             sorted_arrQ10(2,k) = max(0._RKIND,qnifa_fg(k,iCell))
+            sorted_arrQ11(2,k) = max(0._RKIND,volg_fg(k,iCell))
          end do
 
          call mpas_quicksort(nfglevels_actual, sorted_arrQ1)
@@ -6884,12 +6910,9 @@ call mpas_log_write('Done with soil consistency check')
          call mpas_quicksort(nfglevels_actual, sorted_arrQ8)
          call mpas_quicksort(nfglevels_actual, sorted_arrQ9)
          call mpas_quicksort(nfglevels_actual, sorted_arrQ10)
+         call mpas_quicksort(nfglevels_actual, sorted_arrQ11)
          do k = nVertLevels, 1, -1
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
-            scalars(index_nwfa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ9(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_nifa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ10(:,1:nfglevels_actual-1), order=1, extrap=0)
             scalars(index_qc,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
                                         sorted_arrQ1(:,1:nfglevels_actual-1), order=1, extrap=0)
             scalars(index_qr,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
@@ -6906,6 +6929,12 @@ call mpas_log_write('Done with soil consistency check')
                                         sorted_arrQ7(:,1:nfglevels_actual-1), order=1, extrap=0)
             scalars(index_nr,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
                                         sorted_arrQ8(:,1:nfglevels_actual-1), order=1, extrap=0)
+            scalars(index_nwfa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                        sorted_arrQ9(:,1:nfglevels_actual-1), order=1, extrap=0)
+            scalars(index_nifa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                        sorted_arrQ10(:,1:nfglevels_actual-1), order=1, extrap=0)
+            scalars(index_volg,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                        sorted_arrQ11(:,1:nfglevels_actual-1), order=1, extrap=0)
          end do
 
          ! GHT
@@ -7006,7 +7035,8 @@ call mpas_log_write('Done with soil consistency check')
       end do
 
       deallocate(sorted_arr)
-      deallocate(sorted_arrQ1,sorted_arrQ2,sorted_arrQ3,sorted_arrQ4,sorted_arrQ5,sorted_arrQ6,sorted_arrQ7,sorted_arrQ8,sorted_arrQ9,sorted_arrQ10)
+      deallocate(sorted_arrQ1,sorted_arrQ2,sorted_arrQ3,sorted_arrQ4,sorted_arrQ5,sorted_arrQ6,sorted_arrQ7,sorted_arrQ8)
+      deallocate(sorted_arrQ9,sorted_arrQ10,sorted_arrQ11)
 
       ! Diagnose the water vapor mixing ratios:
       global_sh_min = 0._RKIND
@@ -7055,6 +7085,9 @@ call mpas_log_write('Done with soil consistency check')
             enddo
          enddo
       endif
+
+      call mpas_log_write('Fill scalars(index_volg,:,:) with 0; index_volg=$i', intargs=(/ index_volg /))
+      scalars(index_volg,:,:) = 0._RKIND
 
       !
       ! After RH has been used to compute qv (unless config_use_spechumd = T and a valid spechum field
@@ -7329,7 +7362,7 @@ call mpas_log_write('Done with soil consistency check')
 
       integer :: nfglevels_actual
       integer, pointer :: index_qv, index_qc, index_qr, index_qi, index_qs, index_qg,index_ni, index_nc, index_nr, index_ns, index_ng
-      integer, pointer :: index_nwfa, index_nifa
+      integer, pointer :: index_nwfa, index_nifa, index_volg
 
       integer, dimension(5) :: interp_list
       real (kind=RKIND) :: msgval
@@ -7338,7 +7371,7 @@ call mpas_log_write('Done with soil consistency check')
       integer, dimension(:,:), pointer :: cellsOnEdge, edgesOnCell
       real (kind=RKIND), dimension(:,:), pointer :: sorted_arr
       real (kind=RKIND), dimension(:,:), pointer :: sorted_arrQ1,sorted_arrQ2,sorted_arrQ3,sorted_arrQ4,sorted_arrQ5,sorted_arrQ6,sorted_arrQ7,sorted_arrQ8
-      real (kind=RKIND), dimension(:,:), pointer :: sorted_arrQ9,sorted_arrQ10
+      real (kind=RKIND), dimension(:,:), pointer :: sorted_arrQ9,sorted_arrQ10,sorted_arrQ11
 
       integer :: sfc_k
 
@@ -7390,6 +7423,7 @@ call mpas_log_write('Done with soil consistency check')
       real (kind=RKIND), dimension(:,:), pointer :: rh_fg
       real (kind=RKIND), dimension(:,:), pointer :: sh_fg
       real (kind=RKIND), dimension(:,:), pointer :: qnwfa_fg
+      real (kind=RKIND), dimension(:,:), pointer :: volg_fg
       real (kind=RKIND), dimension(:,:), pointer :: qnifa_fg
       real (kind=RKIND), dimension(:,:), pointer :: qc_fg
       real (kind=RKIND), dimension(:,:), pointer :: qr_fg
@@ -7486,6 +7520,14 @@ call mpas_log_write('Done with soil consistency check')
       call mpas_pool_get_array(fg, 'rh', rh_fg)
       call mpas_pool_get_array(fg, 'sh', sh_fg)
       call mpas_pool_get_array(fg, 'qnwfa', qnwfa_fg)
+      call mpas_pool_get_array(fg, 'volg', volg_fg)
+      if(associated(volg_fg)) then
+         call mpas_log_write('volg_fg is associated (2)')
+      else
+         call mpas_log_write('volg_fg not associated (2)')
+      endif
+      call mpas_pool_get_array(fg, 'qnifa', qnifa_fg)
+
       call mpas_pool_get_array(fg, 'qnifa', qnifa_fg)
       call mpas_pool_get_array(fg, 'qc', qc_fg)
       call mpas_pool_get_array(fg, 'qr', qr_fg)
@@ -7504,6 +7546,8 @@ call mpas_log_write('Done with soil consistency check')
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_qv', index_qv)
 
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_nwfa', index_nwfa)
+      call mpas_pool_get_dimension(lbc_state, 'index_lbc_volg', index_volg)
+      call mpas_log_write('index_lbc_volg = $i', intargs=(/ index_volg /))
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_nifa', index_nifa)
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_qc', index_qc)
       call mpas_pool_get_dimension(lbc_state, 'index_lbc_qi', index_qi)
@@ -7578,6 +7622,7 @@ call mpas_log_write('Done with soil consistency check')
              trim(field % field) == 'RH' .or. &
              trim(field % field) == 'SPECHUMD' .or. &
              trim(field % field) == 'QNWFA' .or. &
+             trim(field % field) == 'VOLG' .or. &
              trim(field % field) == 'QNIFA' .or. &
              trim(field % field) == 'QC' .or. &
              trim(field % field) == 'QR' .or. &
@@ -7718,6 +7763,13 @@ call mpas_log_write('Done with soil consistency check')
                latPoints => latCell
                lonPoints => lonCell
                call mpas_pool_get_array(fg, 'qnwfa', destField2d)
+               ndims = 2
+            else if (trim(field % field) == 'VOLG' ) then
+               call mpas_log_write('Interpolating VOLG at $i $r', intArgs=(/k/), realArgs=(/vert_level(k)/))
+               nInterpPoints = nCells
+               latPoints => latCell
+               lonPoints => lonCell
+               call mpas_pool_get_array(fg, 'volg', destField2d)
                ndims = 2
             else if (trim(field % field) == 'QNIFA' ) then
                call mpas_log_write('Interpolating QNIFA at $i $r', intArgs=(/k/), realArgs=(/vert_level(k)/))
@@ -7956,6 +8008,9 @@ call mpas_log_write('Done with soil consistency check')
       allocate(sorted_arrQ8(2,nfglevels_actual))
       allocate(sorted_arrQ9(2,nfglevels_actual))
       allocate(sorted_arrQ10(2,nfglevels_actual))
+      allocate(sorted_arrQ11(2,nfglevels_actual))
+
+      call mpas_log_write('Vertically interpolate meteorological data with index_volg=$i and nCells=$i', intargs=(/ index_volg, nCells /))
 
       do iCell=1,nCells
 
@@ -8026,7 +8081,9 @@ call mpas_log_write('Done with soil consistency check')
          sorted_arrQ8(:,:) = -999.0
          sorted_arrQ9(:,:) = -999.0
          sorted_arrQ10(:,:) = -999.0
+         sorted_arrQ11(:,:) = -999.0
          scalars(index_nwfa,:,iCell) = 0._RKIND
+         scalars(index_volg,:,iCell) = 0._RKIND
          scalars(index_nifa,:,iCell) = 0._RKIND
          scalars(index_qc,:,iCell) = 0._RKIND
          scalars(index_qr,:,iCell) = 0._RKIND
@@ -8050,6 +8107,7 @@ call mpas_log_write('Done with soil consistency check')
             sorted_arrQ8(1,k) = z_fg(k,iCell)
             sorted_arrQ9(1,k) = z_fg(k,iCell)
             sorted_arrQ10(1,k) = z_fg(k,iCell)
+            sorted_arrQ11(1,k) = z_fg(k,iCell)
             if (vert_level(k) == 200100.0) then
                 sorted_arrQ1(1,k) = 99999.0
                 sorted_arrQ2(1,k) = 99999.0
@@ -8061,6 +8119,7 @@ call mpas_log_write('Done with soil consistency check')
                 sorted_arrQ8(1,k) = 99999.0
                 sorted_arrQ9(1,k) = 99999.0
                 sorted_arrQ10(1,k) = 99999.0
+                sorted_arrQ11(1,k) = 99999.0
              endif
             sorted_arrQ1(2,k) = max(0._RKIND,qc_fg(k,iCell))
             sorted_arrQ2(2,k) = max(0._RKIND,qr_fg(k,iCell))
@@ -8072,6 +8131,7 @@ call mpas_log_write('Done with soil consistency check')
             sorted_arrQ8(2,k) = max(0._RKIND,qnr_fg(k,iCell))
             sorted_arrQ9(2,k) = max(0._RKIND,qnwfa_fg(k,iCell))
             sorted_arrQ10(2,k) = max(0._RKIND,qnifa_fg(k,iCell))
+            sorted_arrQ11(2,k) = max(0._RKIND,volg_fg(k,iCell))
          end do
 
          call mpas_quicksort(nfglevels_actual, sorted_arrQ1)
@@ -8084,12 +8144,9 @@ call mpas_log_write('Done with soil consistency check')
          call mpas_quicksort(nfglevels_actual, sorted_arrQ8)
          call mpas_quicksort(nfglevels_actual, sorted_arrQ9)
          call mpas_quicksort(nfglevels_actual, sorted_arrQ10)
+         call mpas_quicksort(nfglevels_actual, sorted_arrQ11)
          do k = nVertLevels, 1, -1
             target_z = 0.5 * (zgrid(k,iCell) + zgrid(k+1,iCell))
-            scalars(index_nwfa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ9(:,1:nfglevels_actual-1), order=1, extrap=0)
-            scalars(index_nifa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
-                                        sorted_arrQ10(:,1:nfglevels_actual-1), order=1, extrap=0)
             scalars(index_qc,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
                                         sorted_arrQ1(:,1:nfglevels_actual-1), order=1, extrap=0)
             scalars(index_qr,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
@@ -8106,6 +8163,12 @@ call mpas_log_write('Done with soil consistency check')
                                         sorted_arrQ7(:,1:nfglevels_actual-1), order=1, extrap=0)
             scalars(index_nr,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
                                         sorted_arrQ8(:,1:nfglevels_actual-1), order=1, extrap=0)
+            scalars(index_nwfa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                        sorted_arrQ9(:,1:nfglevels_actual-1), order=1, extrap=0)
+            scalars(index_nifa,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                        sorted_arrQ10(:,1:nfglevels_actual-1), order=1, extrap=0)
+            scalars(index_volg,k,iCell) = vertical_interp(target_z, nfglevels_actual-1, &
+                                        sorted_arrQ11(:,1:nfglevels_actual-1), order=1, extrap=0)
             if (target_z < z_fg(1,iCell) .and. k < nVertLevels) then
                 scalars(index_nwfa,k,iCell) = scalars(index_nwfa,k+1,iCell)
                 scalars(index_nifa,k,iCell) = scalars(index_nifa,k+1,iCell)
@@ -8119,6 +8182,7 @@ call mpas_log_write('Done with soil consistency check')
                 scalars(index_nr,k,iCell) = scalars(index_nr,k+1,iCell)
                 scalars(index_ns,k,iCell) = scalars(index_ns,k+1,iCell)
                 scalars(index_ng,k,iCell) = scalars(index_ng,k+1,iCell)
+                scalars(index_volg,k,iCell) = scalars(index_volg,k+1,iCell)
             endif
          end do
 
@@ -8162,7 +8226,8 @@ call mpas_log_write('Done with soil consistency check')
       end do
 
       deallocate(sorted_arr)
-      deallocate(sorted_arrQ1,sorted_arrQ2,sorted_arrQ3,sorted_arrQ4,sorted_arrQ5,sorted_arrQ6,sorted_arrQ7,sorted_arrQ8,sorted_arrQ9,sorted_arrQ10)
+      deallocate(sorted_arrQ1,sorted_arrQ2,sorted_arrQ3,sorted_arrQ4,sorted_arrQ5,sorted_arrQ6,sorted_arrQ7,sorted_arrQ8)
+      deallocate(sorted_arrQ9,sorted_arrQ10,sorted_arrQ11)
 
 
       ! Diagnose the water vapor mixing ratios:
@@ -9996,6 +10061,7 @@ call mpas_log_write('Done with soil consistency check')
      
      integer, pointer :: index_nwfa
      integer, pointer :: index_nifa
+     integer, pointer :: index_volg
      integer, pointer :: nCells
      integer, pointer :: nVertLevels
 
@@ -10031,6 +10097,7 @@ call mpas_log_write('Done with soil consistency check')
      
      call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
      call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
+     call mpas_pool_get_dimension(state, 'index_volg', index_volg)
      
      call mpas_pool_get_array(state, 'scalars', scalars)
      call mpas_pool_get_array(mesh, 'latCell', latCell)
@@ -10163,6 +10230,10 @@ call mpas_log_write('Done with soil consistency check')
            scalars(index_nifa,k,iCell) = month_interp_weight*ifa_aerosol_climo(lon_index,lat_index,pressure_index,month_index) + &
                 (1.0 - month_interp_weight)*ifa_aerosol_climo(lon_index,lat_index,pressure_index,interp_month_index)
         end do
+
+        if(index_volg > 0) then
+           scalars(index_volg,k,:) = 0
+        endif
      enddo
    end subroutine init_microphysics_aerosols
 
@@ -10197,6 +10268,7 @@ call mpas_log_write('Done with soil consistency check')
      type (mpas_pool_type), intent(inout) :: lbc_state
      
      integer, pointer :: index_nwfa
+     integer, pointer :: index_volg
      integer, pointer :: index_nifa
 !     integer, pointer :: nCells
 !     integer, pointer :: nVertLevels
@@ -10230,6 +10302,7 @@ call mpas_log_write('Done with soil consistency check')
      
      call mpas_pool_get_dimension(state, 'index_nwfa', index_nwfa)
      call mpas_pool_get_dimension(state, 'index_nifa', index_nifa)
+     call mpas_pool_get_dimension(state, 'index_volg', index_volg)
 
      call mpas_pool_get_array(lbc_state, 'lbc_scalars', scalars)
 !     call mpas_pool_get_array(state, 'scalars', scalars)
@@ -10363,6 +10436,9 @@ call mpas_log_write('Done with soil consistency check')
            scalars(index_nifa,k,iCell) = month_interp_weight*ifa_aerosol_climo(lon_index,lat_index,pressure_index,month_index) + &
                 (1.0 - month_interp_weight)*ifa_aerosol_climo(lon_index,lat_index,pressure_index,interp_month_index)
         end do
+        if(index_volg > 0) then
+           scalars(index_nifa,k,:) = 0
+        endif
      enddo
    end subroutine init_microphysics_aerosols_lbc
      ! ##############################################################################

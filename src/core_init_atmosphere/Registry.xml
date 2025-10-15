@@ -1315,7 +1315,8 @@
                              description="Lateral boundary tendency of CCN number concentration"/>
 
                         <var name="lbc_volg" array_group="volume" units="m^{3} s^{-1}"
-                             description="Lateral boundary tendency of graupel particle volume"/>
+                             description="Lateral boundary tendency of graupel particle volume"
+                             packages="mp_thompson_aers_in;tempo_aerosolaware_in"/>
 
                         <var name="lbc_volh" array_group="volume" units="m^{3} s^{-1}"
                              description="Lateral boundary tendency of hail particle volume"/>
@@ -1361,6 +1362,9 @@
                 <var name="sh_fg" name_in_code="sh" type="real" dimensions="nFGLevels nCells Time" units="kg kg^{-1}"
                      description="First guess specific humidity"
                      packages="first_guess_field"/>
+
+	        <var name="volg_fg" name_in_code="volg" type="real" dimensions="nFGLevels nCells Time" units="m^{3} s^{-1}"
+		     description="First guess graupel particle volume"/>
 
 	        <var name="qnwfa_fg" name_in_code="qnwfa" type="real" dimensions="nFGLevels nCells Time" units="kg^{-1}"
 		     description="First guess water-friendly aerosols"/>
