@@ -12,15 +12,15 @@ while(<>) {
     chomp;
     # Find lines like:
     #     cray: # BUILDTARGET Cray Programming Environment
-    if(/^(\S+):\s*(#.*$)?/) {
+    if(/^(\S+):(\s*#.*$)?/) {
         $buildtarget = $1; # like "cray"
         if($in_build_target) {
-            print("elseif(BUILDTARGET STREQUAL \"$buildtarget\") $2\n")
+            print("elseif(BUILDTARGET STREQUAL \"$buildtarget\")$2\n")
         } else {
-            print("if(BUILDTARGET STREQUAL \"$buildtarget\") $2\n")
+            print("if(BUILDTARGET STREQUAL \"$buildtarget\")$2\n")
         }
         $in_build_target = 1;
-        print("message(\"Using compiliation options for build target \\\"$buildtarget\\\"\")\n");
+        print("  message(\"Using compiliation options for build target \\\"$buildtarget\\\"\")\n");
 
     } elsif($in_build_target and /^\t"FFLAGS_OPT\s*=\s*(.*?)"/) {
         print("  set(CMAKE_Fortran_FLAGS_RELEASE \"\${CMAKE_Fortran_FLAGS_RELEASE} $1\")\n");
