@@ -22,6 +22,7 @@ option(MPAS_PROFILE "Enable GPTL profiling" OFF)
 option(MPAS_OPENMP "Enable OpenMP" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(MPAS_USE_PIO "Build with PIO I/O library" OFF)
+option(BUILDTARGET "Optimization settings" "dummy")
 
 message(STATUS "[OPTION] MPAS_CORES: ${MPAS_CORES}")
 message(STATUS "[OPTION] MPAS_DOUBLE_PRECISION: ${MPAS_DOUBLE_PRECISION}")
@@ -124,6 +125,8 @@ endforeach()
 
 ### Package config
 include(CMakePackageConfigHelpers)
+
+include("cmake/buildtarget.cmake")
 
 # Build-tree target exports
 export(EXPORT ${PROJECT_NAME}ExportsExternal NAMESPACE ${PROJECT_NAME}::external:: FILE ${PROJECT_NAME}-targets-external.cmake)
