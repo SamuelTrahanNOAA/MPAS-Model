@@ -4195,6 +4195,12 @@ module mpas_io_streams
          if (present(ierr)) ierr = MPAS_STREAM_NOT_INITIALIZED
          return
       end if
+      if (.not. stream % fileHandle % data_mode) then
+         ! Can always write an attribute in define mode.
+         STREAM_DEBUG_WRITE('Able to write attribute "' // trim(attName) // '" in define mode.')
+         MPAS_checkStreamAtt = .true.
+         return
+      endif
       call MPAS_io_has_att(stream % fileHandle, attName, ierr=io_err) 
       if(io_err /= 0) then
          return
@@ -4226,10 +4232,6 @@ module mpas_io_streams
          if (present(ierr)) ierr = MPAS_STREAM_NOT_INITIALIZED
          return
       end if
-      call MPAS_io_has_att(stream % fileHandle, attName, ierr=io_err) 
-      if(io_err /= 0) then
-         return
-      endif
       call MPAS_io_put_att(stream % fileHandle, attName, attValue, syncVal=syncVal, ierr=io_err) 
       call MPAS_io_err_mesg(stream % fileHandle % ioContext, io_err, .false.)
       if (io_err /= MPAS_IO_NOERR .and. present(ierr)) ierr = MPAS_IO_ERR
