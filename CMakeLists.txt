@@ -1,9 +1,13 @@
 ## MPAS-Model
 cmake_minimum_required(VERSION 3.12)
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/buildtarget/init_before_project.cmake")
+
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions/MPAS_Functions.cmake)
 get_mpas_version(MPAS_VERSION)
 project(MPAS LANGUAGES C Fortran VERSION ${MPAS_VERSION} DESCRIPTION "MPAS - Model for Prediction Across Scales")
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/buildtarget/init_after_project.cmake")
 
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 set(CMAKE_DIRECTORY_LABELS ${PROJECT_NAME})
