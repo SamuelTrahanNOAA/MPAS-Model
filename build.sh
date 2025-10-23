@@ -96,6 +96,8 @@ check_for_quote() {
 decide_build_target() {
     if [[ "$MPAS_BUILDTARGET" == UNKNOWN ]] ; then
         # Are we on a known machine?
+        unset MACHINE_ID
+        unset MACHINE
         source src/tools/detect_machine.sh
 
         if [[ "$MACHINE_ID" == UNKNOWN ]] ; then
@@ -104,10 +106,8 @@ decide_build_target() {
             echo "You appear to be on the machine \"$MACHINE_ID\". I will use its preset options for compiler $COMPILER, if any exist."
 
             source src/tools/module-setup.sh
-
             if ( ls $PWD/modulefiles/mpas_model_$MACHINE_ID* > /dev/null 2>&1 ) ; then
                 module use $PWD/modulefiles
-               #module spider mpas_model_$MACHINE_ID.$COMPILER
                 module load mpas_model_$MACHINE_ID.$COMPILER
                 echo Loaded modules:
                 module list

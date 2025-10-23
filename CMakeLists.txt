@@ -1,6 +1,7 @@
 ## MPAS-Model
 cmake_minimum_required(VERSION 3.12)
 
+option(MPAS_BUILDTARGET "Preset compilation options for a platform." OFF)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/buildtarget/init_before_project.cmake")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions/MPAS_Functions.cmake)

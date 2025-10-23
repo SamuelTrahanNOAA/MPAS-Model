@@ -92,5 +92,5 @@ elif [[ ${MACHINE_ID} = noaacloud ]] ; then
     module purge
 
 else
-    echo WARNING: UNKNOWN PLATFORM 1>&2
+    echo Unknown platform. Will not initialize module command. Will not purge modules. 1>&2
 fi
