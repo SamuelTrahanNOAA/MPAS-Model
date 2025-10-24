@@ -4,8 +4,8 @@ usage() {
 cat<<EOF
 Synopsis: ./build.sh [ options ]
 
-On supported machines, this script detects the machine and sets up the environment
-to build on them. Otherwise, it is a simple wrapper around cmake and make.
+On supported machines, this script detects the machine, loads needed modules, runs cmake, and make.
+For unsupported machines, all the script does is cmake and make.
 
 Options:
 -v                Have "make" print all commands that are run.
@@ -14,8 +14,7 @@ Options:
                   Default: $DEFAULT_BUILD_JOBS
 -DOPTION=VALUE    An option passed to cmake
 -m machine_id     Skip machine detection and build for this machine.
--c compiler       Used to decide what modulefile to use on a supported machine.
-                  Default: $DEFAULT_COMPILER
+-c compiler       Use the modulefile for this compiler. Default: $DEFAULT_COMPILER
 -h                Print this message and exit
 EOF
     echo "$@"
@@ -27,18 +26,20 @@ initialize_variables() {
     DEFAULT_COMPILER=intel
 
     COMPILER=$DEFAULT_COMPILER
-    CMAKE_OPTIONS=" "
     BUILD_JOBS=$DEFAULT_BUILD_JOBS
+
+    declare -a CMAKE_OPTIONS
+    CMAKE_OPTIONS=( )
 
     unset MACHINE_ID MACHINE
 }
 
 scan_command_line() {
     local opt
-    while getopts "dvhp:c:j:t:D:" opt ; do
+    while getopts "dvhc:j:m:D:" opt ; do
         case $opt in
             d)
-                CMAKE_OPTIONS+="-DCMAKE_BUILD_TYPE=Debug "
+                CMAKE_OPTIONS+=( "-DCMAKE_BUILD_TYPE=Debug" )
                 ;;
             j)
                 BUILD_JOBS=$(( 0 + OPTARG ))
@@ -53,13 +54,13 @@ scan_command_line() {
                 if [[ "$OPTARG" =~ \' ]] ; then
                     usage ERROR: Script is exiting because of a \' in the -D option. Options cannot include a \' due to shell limitations.
                 fi
-                CMAKE_OPTIONS+=" '-D$OPTARG'"
+                CMAKE_OPTIONS+=( "-D$OPTARG" )
                 ;;
             c)
                 COMPILER="$OPTARG"
                 ;;
             v)
-                CMAKE_OPTIONS+=" -DCMAKE_VERBOSE_MAKEFILE=ON"
+                CMAKE_OPTIONS+=( "-DCMAKE_VERBOSE_MAKEFILE=ON" )
                 ;;
             h|\?|:)
                 usage
@@ -67,8 +68,8 @@ scan_command_line() {
         esac
     done
 
-    if [[ OPTIND > 1 ]] ; then
-        usage "Script is exiting due to unrecognized arguments: $*"
+    if [[ OPTIND < "$#" ]] ; then
+        usage "$OPTIND $# Script is exiting due to unrecognized arguments: $*"
     fi
 }
 
@@ -80,7 +81,7 @@ decide_build_target() {
 
     MPAS_BUILDTARGET=OFF
     if [[ "$MACHINE_ID" != UNKNOWN ]] ; then
-        echo "You appear to be on the machine \"$MACHINE_ID\"."
+        echo "Looking for modules for machine \"$MACHINE_ID\"."
 
         # Load the module command and purge or reset modules
         source src/tools/module-setup.sh
@@ -91,12 +92,13 @@ decide_build_target() {
             echo Using module "$chosen_module"
             module use "$PWD/modulefiles"
             module load "$chosen_module"
-            echo Loaded modules:
             module list
         else
             echo WARNING: "$chosen_module": No modulefile found.
             echo WARNING: Using cmake defaults since I have no presets for machine $MACHINE_ID compiler $COMPILER.
         fi
+    else
+        echo "You aren't on a supported machine, so I won't load any modules."
     fi
 
     echo MPAS_BUILDTARGET is "$MPAS_BUILDTARGET"
@@ -111,7 +113,7 @@ configure_mpas() {
     cd build
     cmake -DMPAS_CORES='atmosphere;init_atmosphere' \
           -DMPAS_BUILDTARGET="$MPAS_BUILDTARGET" \
-          $CMAKE_OPTIONS \
+          "${CMAKE_OPTIONS[@]}" \
           ..
     set +x
 
