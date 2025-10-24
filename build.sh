@@ -12,6 +12,7 @@ Options:
 list of cores     Select these mpas cores.
                   Default: atmosphere init_atmosphere
 -v                Have "make" print all commands that are run.
+-d                Build in debug mode (cmake -DCMAKE_BUILD_TYPE=Debug)
 -j job_count      Number of "make" threads (ie. make -j $DEFAULT_BUILD_JOBS)
                   Default: $DEFAULT_BUILD_JOBS
 -DOPTION=VALUE    An option passed to cmake
@@ -38,8 +39,11 @@ initialize_variables() {
 
 scan_command_line() {
     local opt
-    while getopts "vhp:c:j:t:D:" opt ; do
+    while getopts "dvhp:c:j:t:D:" opt ; do
         case $opt in
+            d)
+                CMAKE_OPTIONS+="-DCMAKE_BUILD_TYPE=Debug "
+                ;;
             j)
                 BUILD_JOBS=$(( 0 + OPTARG ))
                 ;;
