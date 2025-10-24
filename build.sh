@@ -38,32 +38,22 @@ CMAKE_OPTIONS=( )
 
 while getopts "dvhc:j:m:D:" opt ; do
     case $opt in
-        d)
-            CMAKE_OPTIONS+=( "-DCMAKE_BUILD_TYPE=Debug" )
+        d)  CMAKE_OPTIONS+=( "-DCMAKE_BUILD_TYPE=Debug" )
             ;;
-        j)
-            BUILD_JOBS=$(( 0 + OPTARG ))
-            if (( BUILD_JOBS < 1 )) ; then
-                usage ERROR: Script is exiting due to bad -j option. You must have at least 1 build job.
+        j)  if ! [[ "$OPTARG" =~ ^[1-9][0-9]*$ ]] ; then
+                usage "ERROR: Script is exiting due to bad -j option \"$OPTARG\". You must have at least 1 build job."
             fi
+            BUILD_JOBS=$OPTARG
             ;;
-        m)
-            MACHINE_ID="$OPTARG"
+        m)  MACHINE_ID="$OPTARG"
             ;;
-        D)
-            if [[ "$OPTARG" =~ \' ]] ; then
-                usage ERROR: Script is exiting because of a \' in the -D option. Options cannot include a \' due to shell limitations.
-            fi
-            CMAKE_OPTIONS+=( "-D$OPTARG" )
+        D)  CMAKE_OPTIONS+=( "-D$OPTARG" )
             ;;
-        c)
-            COMPILER="$OPTARG"
+        c)  COMPILER="$OPTARG"
             ;;
-        v)
-            CMAKE_OPTIONS+=( "-DCMAKE_VERBOSE_MAKEFILE=ON" )
+        v)  CMAKE_OPTIONS+=( "-DCMAKE_VERBOSE_MAKEFILE=ON" )
             ;;
-        h)
-            usage
+        h)  usage
             ;;
         \?|:)
             usage "Script is exiting due to invalid arguments. See prior messages for details"
