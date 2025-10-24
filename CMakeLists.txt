@@ -31,7 +31,7 @@ message(STATUS "[OPTION] BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
 message(STATUS "[OPTION] MPAS_BUILDTARGET: ${MPAS_BUILDTARGET}")
 
 # Set options for a supported machine.
-if(NOT $MPAS_BUILDTARGET STREQUAL "OFF")
+if(NOT MPAS_BUILDTARGET STREQUAL "OFF")
   if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Presets/${MPAS_BUILDTARGET}.cmake)
     message("Using configuration for supported machine ${MPAS_BUILDTARGET}")
     include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Presets/${MPAS_BUILDTARGET}.cmake)
