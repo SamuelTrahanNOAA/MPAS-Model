@@ -1,14 +1,9 @@
 ## MPAS-Model
 cmake_minimum_required(VERSION 3.12)
 
-option(MPAS_BUILDTARGET "Preset compilation options for a platform." OFF)
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/buildtarget/init_before_project.cmake")
-
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Functions/MPAS_Functions.cmake)
 get_mpas_version(MPAS_VERSION)
 project(MPAS LANGUAGES C Fortran VERSION ${MPAS_VERSION} DESCRIPTION "MPAS - Model for Prediction Across Scales")
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/buildtarget/init_after_project.cmake")
 
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 set(CMAKE_DIRECTORY_LABELS ${PROJECT_NAME})
@@ -26,12 +21,24 @@ option(MPAS_DOUBLE_PRECISION "Use double precision 64-bit Floating point." TRUE)
 option(MPAS_PROFILE "Enable GPTL profiling" OFF)
 option(MPAS_OPENMP "Enable OpenMP" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(MPAS_BUILDTARGET "Supported machine with preset build logic" OFF)
 
 message(STATUS "[OPTION] MPAS_CORES: ${MPAS_CORES}")
 message(STATUS "[OPTION] MPAS_DOUBLE_PRECISION: ${MPAS_DOUBLE_PRECISION}")
 message(STATUS "[OPTION] MPAS_PROFILE: ${MPAS_PROFILE}")
 message(STATUS "[OPTION] MPAS_OPENMP: ${MPAS_OPENMP}")
 message(STATUS "[OPTION] BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
+message(STATUS "[OPTION] MPAS_BUILDTARGET: ${MPAS_BUILDTARGET}")
+
+# Set options for a supported machine.
+if(NOT $MPAS_BUILDTARGET STREQUAL "OFF")
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Presets/${MPAS_BUILDTARGET}.cmake)
+    message("Using configuration for supported machine ${MPAS_BUILDTARGET}")
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Presets/${MPAS_BUILDTARGET}.cmake)
+  else()
+    message(WARNING "No machine presets found at: cmake/Presets/${MPAS_BUILDTARGET}.cmake")
+  endif()
+endif()
 
 # Build product output locations
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

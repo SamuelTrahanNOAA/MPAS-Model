@@ -1,7 +1,0 @@
-if(NOT $MPAS_BUILDTARGET STREQUAL "OFF")
-  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/buildtarget/${MPAS_BUILDTARGET}.cmake)
-    message("")
-    message("Using configuration for machine ${MPAS_BUILDTARGET}")
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/buildtarget/${MPAS_BUILDTARGET}.cmake)
-  endif()
-endif()

@@ -1623,9 +1623,3 @@ errmsg:
 ifdef CORE
 	exit 1
 endif
-
-cmake/buildtarget/from_makefile.cmake: Makefile src/tools/cmakify_buildtarget.pl
-	cd cmake/buildtarget ; \
-	platforms=`ls -1 *cmake | grep -vE 'init_|from_makefile' | sed 's,.cmake,,g'` ; \
-	../../src/tools/cmakify_buildtarget.pl $$platforms \
-	    < ../../Makefile > from_makefile.cmake

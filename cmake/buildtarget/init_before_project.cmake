@@ -1,7 +1,0 @@
-# set(MPAS_BUILDTARGET $ENV{MPAS_BUILDTARGET})
-if(NOT $MPAS_BUILDTARGET STREQUAL "OFF")
-  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake/buildtarget/${MPAS_BUILDTARGET}.cmake)
-    message("")
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/buildtarget/from_makefile.cmake)
-  endif()
-endif()
