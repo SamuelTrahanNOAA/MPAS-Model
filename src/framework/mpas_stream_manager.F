@@ -1,5 +1,5 @@
 module mpas_stream_manager
-
+! This is a comment.
 #define COMMA ,
 #define STREAM_DEBUG_WRITE(M) ! call mpas_log_write(M)
 #define STREAM_WARNING_WRITE(M) call mpas_log_write( M , messageType=MPAS_LOG_WARN)
