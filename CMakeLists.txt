@@ -91,7 +91,7 @@ else()
     set(CPP_EXECUTABLE ${CMAKE_C_COMPILER})
 endif()
 
-if(JEDI_MPAS_DA)
+if(MPAS_JEDI_DA)
   set(CPP_EXTRA_FLAGS "${CPP_EXTRA_FLAGS} -DMPAS_JEDI_IO")
 endif()
 
