@@ -22,6 +22,7 @@ option(MPAS_PROFILE "Enable GPTL profiling" OFF)
 option(MPAS_OPENMP "Enable OpenMP" OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(MPAS_USE_PIO "Build with PIO I/O library" OFF)
+option(MPAS_JEDI_DA "Indicates MPAS is being built within JEDI" ON)
 
 message(STATUS "[OPTION] MPAS_CORES: ${MPAS_CORES}")
 message(STATUS "[OPTION] MPAS_DOUBLE_PRECISION: ${MPAS_DOUBLE_PRECISION}")
@@ -29,6 +30,7 @@ message(STATUS "[OPTION] MPAS_PROFILE: ${MPAS_PROFILE}")
 message(STATUS "[OPTION] MPAS_OPENMP: ${MPAS_OPENMP}")
 message(STATUS "[OPTION] BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
 message(STATUS "[OPTION] MPAS_USE_PIO: ${MPAS_USE_PIO}")
+message(STATUS "[OPTION] JEDI_MPAS_DA: ${JEDI_MPAS_DA}")
 
 # Build product output locations
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -87,6 +89,10 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "NVHPC" )
 else()
     message(STATUS "Unknown compiler: ${CMAKE_C_COMPILER_ID}")
     set(CPP_EXECUTABLE ${CMAKE_C_COMPILER})
+endif()
+
+if(JEDI_MPAS_DA)
+  set(CPP_EXTRA_FLAGS "${CPP_EXTRA_FLAGS} -DMPAS_JEDI_IO")
 endif()
 
 ## Common Variables

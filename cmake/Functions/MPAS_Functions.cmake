@@ -214,6 +214,8 @@ function(mpas_core_target)
         set(CPP_EXTRA_FLAGS ${CPP_EXTRA_FLAGS} -DDO_PHYSICS)
     endif()
 
+message(STATUS "CPP_EXTRA_FLAGS=${CPP_EXTRA_FLAGS}")
+
 add_custom_command(OUTPUT Registry_processed.xml
             COMMAND ${CPP_EXECUTABLE} -E -P ${CPP_EXTRA_FLAGS} ${CMAKE_CURRENT_SOURCE_DIR}/Registry.xml > Registry_processed.xml
             COMMENT "CORE ${ARG_CORE}: Pre-Process Registry"
