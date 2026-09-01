@@ -775,7 +775,7 @@ module mpas_stream_manager
            do while (mpas_pool_get_next_member(fieldPool, poolItr))
                if (poolItr % memberType == MPAS_POOL_SUBPOOL) then
                    STREAM_DEBUG_WRITE('-- Try to add subpool...')
-                   ! call mpas_stream_mgr_add_pool(manager, streamId, poolItr % memberName, packages=packages, ierr=ierr)
+                   call mpas_stream_mgr_add_pool(manager, streamId, poolItr % memberName, packages=packages, ierr=ierr)
                else if (poolItr % memberType == MPAS_POOL_FIELD) then
                    if (poolItr % dataType == MPAS_POOL_REAL) then
                        if (poolItr % nDims == 0) then
